@@ -1,0 +1,84 @@
+Solving OpenAI Challenge: AntWalker using Off-Policy Reinforcement Learning Methods
+
+Rhea Sharma
+Harshita Maddi
+
+Project Motivation:
+The motivation behind choosing this project was to implement reinforcement learning solutions to understand its concepts even better. We were interested in off-policy learning and intrigued with simulations that wanted to understand multi-jointed motions. We used, MuJoCo, short for "Multi-Joint Dynamics with Contact", which is a physics engine very commonly used in animations and games. Historically, they have been used to evaluate the performance of newly proposed reinforcement learning algorithms.
+
+ANT MUJOCO Environment
+One of the MuJoCo, environments is the ant, which  is a 3D robot consisting of one torso (free rotational body) with four legs attached to it where each leg has two links. The goal is to coordinate the four legs to move in the forward (right) direction by applying torques on the eight hinges connecting the two links of each leg and the torso (nine parts and eight hinges).
+Actions : Torques applied at the hinge joints
+Observation Space: Positional values of different body parts of the ant, followed by the velocities of those individual parts 
+
+Rewards: 
+Healthy_reward: Every time-step that the ant is healthy
+Forward_reward: A reward of moving forward
+Ctrl_cost: Negative reward for penalizing the ant if it’s actions are too large
+Contact_cost: Negative reward for penalizing the ant if the external contact force is too large
+
+reward = healthy_reward + forward_reward - ctrl_cost - contact_cost 
+Starting State : 
+An ant that is standing with it’s orientation facing forward
+
+Episode termination : 
+Any of the state space values are not finite
+The z-coordinate of the torso is not in healthy range
+
+Sample Environment Video
+Without enough training, the ant finds it difficult to move around and has no intuition of new actions to take.
+
+SAC
+Soft Actor-Critic (SAC) is a popular reinforcement learning algorithm that can be used to learn policies for continuous control tasks. SAC is a value-based actor-critic algorithm that uses three neural networks: an actor network, a critic network, and a temperature parameter network.
+The actor network takes the current state as input and outputs a probability distribution over the actions the agent can take. The critic network takes the current state and action as input and estimates the expected cumulative reward. The temperature parameter network is used to adjust the entropy of the policy distribution to balance exploration and exploitation.
+One of the key benefits of SAC is that it can learn policies for tasks with continuous action spaces, which can be difficult for other RL algorithms. SAC is also known for its sample efficiency, meaning that it can learn from fewer interactions with the environment than other algorithms.
+
+
+In SAC, we’re trying to maximize the entropy, we want to encourage exploration and penalize policy with low entropy.
+During training, the agent interacts with the environment and collects data in the form of state-action-reward-next state tuples. The critic network is trained using the Bellman equation, which computes the expected cumulative reward of the current state and action based on the estimated value of the next state. The actor network is trained to maximize the expected cumulative reward, while also minimizing the KL divergence between the policy distribution and a target distribution that is updated periodically.
+
+
+DDPG and TD3	
+
+Another algorithm is Deep Deterministic Policy Gradient which is unlike the stochastic SAC. It's another actor-critic method for continuous control, and works by using policy gradients on top of Deep Q Learning networks. 
+
+Overestimation of values for DDPG: Since we start with a non-optimal policy, value estimation inaccuracies cause overestimation of all future values, leading to an even worse policy. Twin Delayed DDPG (TD3) offers improvements:
+
+1. Target Policy Smoothing Regularization: This adds a random noise to the target output, which smooths the policy gradients due to the added randomness. This has a regularizing effect.
+
+2. Clipped Double Q-Learning: This works by clipping the value estimates. Since TD3 uses two critic networks, it is important to use the minimum of the two value estimates to reduce the overestimation bias. 
+
+3. Delayed Policy Updates: Here, the policy updates (to both critic and actor networks) are delayed to reduce variance in value estimates.
+This is the algorithm that we chose to work with.
+
+
+Experiments 
+We evaluated four different TD3 models with the following configurations and compared the evaluation of the best policies in each case.
+
+OBSERVATION = 10000
+EXPLORATION = 70000
+BATCH_SIZE = 100
+GAMMA = 0.99
+NOISE_CLIP = 0.5
+EXPLORE_NOISE = 0.1
+POLICY_FREQUENCY = 2
+EVAL_FREQUENCY = 5000
+REWARD_THRESH = 8000
+POLICY_NOISE = 0.2
+POLICY_NOISE = 0.3
+TAU = 0.05
+855.17
+530.89
+TAU = 0.005
+696.26
+400.042
+
+Evaluation reward over 100 episodes 
+Since most of the literature was in favor of TD3 for the task we had chosen, we chose to implement it and focus on its 3 improvements. With the implemented code, we observed the interaction between the noise added to the target policy represented by using policy_noise and that of the rate of updating to target networks, which is called tau. A higher value of policy_noise here regularizes the agent’s behavior, and a higher rate of updating makes the target network more susceptible to faster changes in its policy. The rest of the hyperparameters are mentioned here.
+
+Comparison of TD3 models evaluation
+Models with higher tau have a lot of variability in their rewards as expected, but since we are solving a much simpler problem than some other mujoco problems, we see that it is an advantage here. Blue and black lines are higher than their counterparts with the same noise and lesser tau values. Similarly, too much noise is also not good for the rewards as it causes rewards to diverge instead of the expected regularization effect. The best model, as can be inferred from the table earlier too, is with tau set to 0.05 and policy noise set to 0.2.  
+
+Further Research
+As part of our further research, we would like to study algorithms such as TRPO, PPO and A3C for continuous control .
+These are on-policy algorithms. Training is faster in A3C but the convergence is better is in PPO and hence we would like to explore these RL algorithms. 
